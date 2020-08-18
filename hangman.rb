@@ -60,6 +60,40 @@ class Hangman
 
         puts @word
 
+        guessing = true
+
+        while guessing
+
+            guesses = []
+
+            choice = valid_choice()
+
+            guesses << choice
+
+            hint = ""
+
+            @word.split('').each do |letter| 
+
+                puts guesses.include? letter
+                
+                if guesses.include? letter 
+                    
+                    hint.concat("#{letter} ")
+
+                else
+                    
+                    hint.concat("_ ")
+
+                end
+
+            end
+
+            puts "\n #{hint} \n"
+
+            guessing = false
+
+        end
+
     end
 
     def handle_answer(response)
@@ -118,15 +152,35 @@ class Hangman
 
         list = IO.readlines("5desk.txt")
 
-        word = list[rand(list.size)]
+        word = list[rand(list.size)].chomp
 
         while word.length < 5 || word.length > 12
 
-            word = list[rand(list.size)]
+            word = list[rand(list.size)].chomp
 
         end
 
         word
+
+    end
+
+    def valid_choice
+
+        puts "What letter would you like to guess?"
+
+        option = gets.chomp
+
+        if option.length == 1
+
+            option
+
+        else
+
+            puts "Please put in a one letter guess."
+
+            valid_choice()
+
+        end
 
     end
 
