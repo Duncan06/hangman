@@ -2,13 +2,11 @@ class Hangman
 
     def initialize()
 
-        @turn = 0
+        @misses = 0
 
         @word = nil
 
-        @saved_game = []
-
-        @current_guess = nil
+        @guesses = @guesses || []
 
         @id = 0
 
@@ -22,11 +20,13 @@ class Hangman
 
         File.open(filename, 'w') do |file|
 
-            puts @word
+            file.puts @word
 
-            puts @current_guess
+            file.print @guesses
 
-            puts @turn
+            file.puts
+
+            file.puts @misses
         
         end
 
@@ -42,13 +42,17 @@ class Hangman
 
         if response == "new"
 
-            @turn = 0
+            @misses = 0
 
             @word = get_word()
 
+            @id += 1
+
         else
 
-            puts Dir["./saved_games"]
+            load_games = Dir.open "./saved_games"
+
+            load_games.each{ |s| puts s}
 
             puts "Which file would you like to load?"
 
@@ -64,33 +68,63 @@ class Hangman
 
         while guessing
 
-            guesses = []
+            p @guesses
 
-            choice = valid_choice()
+            choice = valid_choice
 
-            guesses << choice
+            if choice == "save"
+
+                break
+
+            end
+
+            @guesses << choice
 
             hint = ""
 
-            @word.split('').each do |letter| 
+            count_missed = 0
 
-                puts guesses.include? letter
+            @word.split('').each do |letter| 
                 
-                if guesses.include? letter 
+                if @guesses.include? letter 
                     
                     hint.concat("#{letter} ")
 
                 else
                     
-                    hint.concat("_ ")
+                    hint.concat("_ ") 
+
+                    count_missed += 1
 
                 end
 
             end
 
+            if !@word.include? choice
+
+                @misses += 1
+
+                puts "Sorry that letter is not in the word! You've missed #{@misses} guesses so far."
+
+            end
+
             puts "\n #{hint} \n"
 
-            guessing = false
+            if count_missed == 0
+
+                puts "You guessed the word!"
+
+                guessing = false
+
+            end
+
+            if @misses > 5
+
+                guessing = false
+
+                puts "Sorry you ran out of guesses! The answer was #{@word}"
+
+            end
 
         end
 
@@ -112,23 +146,25 @@ class Hangman
 
     def handle_filenumber(id)
 
-        if Dir["./saved_games{#{id}"].exists?
+        Dir.chdir "./saved_games"
 
-            File.open("./saved_games#{id}", "r") do |file|
+        if File.exists? id 
+
+            File.open(id, "r") do |file|
 
                 file.readlines.each_with_index do |line, idx|
 
                     if idx == 0
 
-                        @word = line
+                        @word = line.chomp
 
                     elsif idx == 1
 
-                        @current_guess = line
+                        @guesses = Kernel.eval(line)
 
                     else
 
-                        @turn == line
+                        @misses = line.to_i
 
                     end
 
@@ -136,11 +172,13 @@ class Hangman
 
             end
 
+        Dir.chdir ".."
+
         else
 
-            id = gets.chomp
-
             puts "Please select from the list provided."
+
+            id = gets.chomp
 
             handle_filenumber(id)
 
@@ -166,13 +204,19 @@ class Hangman
 
     def valid_choice
 
-        puts "What letter would you like to guess?"
+        puts "What letter would you like to guess? If you woul like to save type save."
 
         option = gets.chomp
 
         if option.length == 1
 
             option
+
+        elsif option == "save"
+
+            save_game(@id)
+
+            "save"
 
         else
 
